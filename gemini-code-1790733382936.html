@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>幸福時光膠囊</title>
+  <!-- 引入輕量拉炮特效庫 -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    :root {
+      --primary: #2d6a4f;
+      --primary-light: #52796f;
+      --secondary: #e8f5e9;
+      --text: #2f3e46;
+      --bg: #f9f8f4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 24px 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: #ffffff;
+      max-width: 440px;
+      width: 100%;
+      padding: 38px 24px;
+      border-radius: 28px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    h1 {
+      font-size: 26px;
+      color: var(--primary);
+      margin: 12px 0 8px;
+    }
+    p.subtitle {
+      font-size: 16px;
+      color: #6c757d;
+      margin: 0 0 24px;
+      line-height: 1.6;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      font-size: 18px;
+      line-height: 1.6;
+      padding: 16px;
+      border-radius: 18px;
+      border: 2px solid #e0e0e0;
+      background: #fafaf8;
+      color: var(--text);
+      outline: none;
+      resize: none;
+    }
+    textarea:focus {
+      border-color: var(--primary);
+      background: #ffffff;
+    }
+    .btn {
+      font-size: 19px;
+      font-weight: bold;
+      padding: 15px 24px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 12px;
+      display: block;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .btn:active {
+      transform: scale(0.97);
+    }
+    .btn-main {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 6px 16px rgba(45, 106, 79, 0.25);
+    }
+    .btn-secondary {
+      background: #52796f;
+      color: white;
+      box-shadow: 0 4px 12px rgba(82, 121, 111, 0.2);
+    }
+    .btn-outline {
+      background: #f0f7f4;
+      color: var(--primary);
+      border: 1.5px solid var(--primary);
+    }
+    .btn-link {
+      background: transparent;
+      color: #888;
+      font-size: 14px;
+      font-weight: normal;
+      box-shadow: none;
+      margin-top: 16px;
+      text-decoration: underline;
+    }
+
+    /* 圖示與動畫 */
+    .capsule-icon {
+      font-size: 72px;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+    .animate-open-pop {
+      animation: capsulePopOpen 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes capsulePopOpen {
+      0% { transform: scale(0.6) rotate(-20deg); opacity: 0; }
+      60% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    /* 翻頁開箱日記卡片樣式 */
+    .diary-page {
+      background: #fbfbf7;
+      border: 1.5px dashed #c9d6cf;
+      border-radius: 18px;
+      padding: 22px 18px;
+      margin: 18px 0;
+      text-align: left;
+    }
+    .diary-date {
+      font-size: 14px;
+      color: #7b9e89;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .diary-content {
+      font-size: 19px;
+      line-height: 1.7;
+      color: #264653;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* 隱藏面板 */
+    .view-panel { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- 狀態 1：第一次進入，寫下心願 -->
+  <div id="panelWrite" class="view-panel">
+    <div class="capsule-icon">💌</div>
+    <h1>幸福時光膠囊</h1>
+    <p class="subtitle">寫下一句想鼓勵或叮嚀自己的話<br>送給三個月後的自己。</p>
+    <textarea id="capsuleMsg" placeholder="親愛的自己：希望你笑口常開，每天都有好好散步..."></textarea>
+    <button class="btn btn-main" onclick="handleSeal()">✨ 封存我的心願</button>
+  </div>
+
+  <!-- 狀態 2：密封狀態（保留原狀 + 雙按鈕選擇） -->
+  <div id="panelSealed" class="view-panel">
+    <div class="capsule-icon">🔒</div>
+    <h1>膠囊已密封！</h1>
+    <p class="subtitle" style="font-size: 17px; line-height: 1.6; margin-top: 14px;">
+      您的心願已安全藏入專屬時光機。<br>
+      請帶著這份溫暖，好好過好每一天。<br><br>
+      <span style="color: var(--primary); font-weight: bold;">🌱 三個月後，我們再見！</span>
+    </p>
+    
+    <!-- 選項 1：偷看一下（靜態快速預覽） -->
+    <button class="btn btn-secondary" onclick="showDirectPeek()">👀 偷看一下我的膠囊</button>
+    
+    <!-- 選項 2：正式開啟膠囊（播放開箱儀式與拉炮動畫） -->
+    <button class="btn btn-outline" onclick="triggerOpenCeremony()">🎁 正式開啟膠囊</button>
+  </div>
+
+  <!-- 狀態 3：開啟膠囊後的感性畫面 -->
+  <div id="panelOpened" class="view-panel">
+    <div id="openedIcon" class="capsule-icon">🎁</div>
+    <h1 id="openedTitle">時光膠囊已開啟</h1>
+    <p class="subtitle" id="openedSubtitle">
+      ✨ 這是當初封存時，您留給自己的話：
+    </p>
+
+    <!-- 呈現內容 -->
+    <div class="diary-page">
+      <div id="savedDate" class="diary-date">📅 封存日期：載入中...</div>
+      <div id="savedText" class="diary-content"></div>
+    </div>
+
+    <!-- 溫暖寄語 -->
+    <p style="font-size: 15px; color: #52796f; line-height: 1.6; margin: 16px 0 4px;">
+      <b>一路走來，謝謝努力生活的自己！</b><br>
+      無論時光如何流轉，幸福依然與您在線 ❤️
+    </p>
+
+    <button class="btn btn-link" onclick="backToSealed()">返回膠囊首頁</button>
+    <button class="btn btn-link" style="color: #bbb; margin-top: 2px;" onclick="resetCapsule()">重新寫一個新膠囊</button>
+  </div>
+
+</div>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('senior_capsule_data');
+    if (saved) {
+      showPanel('panelSealed');
+    } else {
+      showPanel('panelWrite');
+    }
+  });
+
+  function showPanel(panelId) {
+    document.querySelectorAll('.view-panel').forEach(p => p.style.display = 'none');
+    document.getElementById(panelId).style.display = 'block';
+  }
+
+  // 封存心願
+  function handleSeal() {
+    const text = document.getElementById('capsuleMsg').value.trim();
+    if (!text) {
+      alert('請先寫下一句話再封存喔！');
+      return;
+    }
+
+    const today = new Date();
+    const dateStr = `${today.getFullYear()} 年 ${today.getMonth() + 1} 月 ${today.getDate()} 日`;
+    localStorage.setItem('senior_capsule_data', JSON.stringify({ content: text, date: dateStr }));
+
+    showPanel('panelSealed');
+  }
+
+  // 1. 偷看一下（直接看內容）
+  function showDirectPeek() {
+    loadCapsuleData();
+    document.getElementById('openedIcon').innerText = '💌';
+    document.getElementById('openedTitle').innerText = '悄悄看一下心願';
+    document.getElementById('openedSubtitle').innerText = '膠囊仍在守護中，這是您留存的話：';
+    showPanel('panelOpened');
+  }
+
+  // 2. 正式開啟膠囊（儀式感開箱 + 灑花拉炮動畫）
+  function triggerOpenCeremony() {
+    loadCapsuleData();
+    document.getElementById('openedIcon').innerText = '✨';
+    document.getElementById('openedTitle').innerText = '🎉 時光膠囊正式開啟！';
+    document.getElementById('openedSubtitle').innerText = '跨越時光的問候，送給現在的您：';
+    
+    showPanel('panelOpened');
+
+    // 加入彈跳放大動畫
+    const icon = document.getElementById('openedIcon');
+    icon.classList.remove('animate-open-pop');
+    void icon.offsetWidth;
+    icon.classList.add('animate-open-pop');
+
+    // 觸發彩色拉炮粒子特效
+    if (typeof confetti === 'function') {
+      confetti({
+        particleCount: 70,
+        spread: 60,
+        origin: { y: 0.6 }
+      });
+    }
+  }
+
+  function loadCapsuleData() {
+    const raw = localStorage.getItem('senior_capsule_data');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    document.getElementById('savedDate').innerText = `📅 封存日期：${data.date}`;
+    document.getElementById('savedText').innerText = data.content;
+  }
+
+  function backToSealed() {
+    showPanel('panelSealed');
+  }
+
+  function resetCapsule() {
+    if (confirm('確定要清除舊心願，重新封存一個新的嗎？')) {
+      localStorage.removeItem('senior_capsule_data');
+      document.getElementById('capsuleMsg').value = '';
+      showPanel('panelWrite');
+    }
+  }
+</script>
+
+</body>
+</html>
